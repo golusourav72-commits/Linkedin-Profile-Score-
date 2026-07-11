@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Signal Check — LinkedIn Profile Scorer</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="page">
+
+    <header class="header">
+      <div class="header-tag">
+        <span class="pulse-dot"></span>
+        <span>Profile Diagnostic</span>
+      </div>
+      <h1>Signal Check</h1>
+      <p class="subtitle">Upload your LinkedIn "Save to PDF" export, or paste sections manually. Get a section-by-section scan — what's strong, what's leaking signal, and exactly how to fix it.</p>
+    </header>
+
+    <main class="grid">
+
+      <!-- LEFT: INPUT PANEL -->
+      <section class="panel">
+
+        <div class="upload-box" id="uploadBox">
+          <div class="upload-icon"><i class="fa-solid fa-file-pdf"></i></div>
+          <div class="upload-text">
+            <div class="upload-title" id="uploadTitle">Upload LinkedIn PDF export</div>
+            <div class="upload-hint">Profile → More → Save to PDF, then upload it here to auto-fill every section</div>
+          </div>
+          <button class="btn-outline" id="chooseFileBtn">Choose file</button>
+          <input type="file" id="pdfInput" accept="application/pdf" hidden />
+        </div>
+
+        <form id="profileForm" class="form-card">
+          <!-- Section inputs are injected here by script.js from rubric.json -->
+        </form>
+
+        <button id="runScanBtn" class="btn-primary" disabled>Run Scan</button>
+        <div id="formError" class="error-text"></div>
+
+      </section>
+
+      <!-- RIGHT: RESULTS PANEL -->
+      <section class="panel results-panel">
+        <div id="resultsEmpty" class="results-empty">
+          Fill in at least one section and run a scan to see your score.
+        </div>
+
+        <div id="resultsLoading" class="results-loading hidden">
+          Analyzing signal strength...
+        </div>
+
+        <div id="resultsContent" class="hidden">
+          <div class="gauge-wrap">
+            <svg id="gaugeSvg" viewBox="0 0 220 130" width="220" height="130">
+              <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#232B38" stroke-width="14" stroke-linecap="round" />
+              <path id="gaugeArc" d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#F5A623" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 283" />
+              <line id="gaugeNeedle" x1="110" y1="110" x2="110" y2="42" stroke="#E8ECF1" stroke-width="3" stroke-linecap="round" />
+              <circle cx="110" cy="110" r="6" fill="#E8ECF1" />
+            </svg>
+            <div class="gauge-label">
+              <div id="gaugeScore" class="gauge-score">0</div>
+              <div class="gauge-caption">Signal Score</div>
+            </div>
+          </div>
+
+          <div class="priority-fixes">
+            <div class="section-title">Priority Fixes</div>
+            <ol id="priorityList"></ol>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <section id="breakdown" class="breakdown hidden">
+      <div class="section-title">Section Breakdown</div>
+      <div id="breakdownGrid" class="breakdown-grid"></div>
+    </section>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

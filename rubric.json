@@ -1,0 +1,60 @@
+{
+  "sections": [
+    {
+      "key": "headline",
+      "label": "Headline",
+      "icon": "type",
+      "multiline": false,
+      "placeholder": "e.g. Aspiring SDE | DSA | MERN Stack | Building CoreDevs India",
+      "maxChars": 220,
+      "minCharsWarning": 40
+    },
+    {
+      "key": "about",
+      "label": "About / Summary",
+      "icon": "user",
+      "multiline": true,
+      "placeholder": "Paste your About section...",
+      "minWordsWarning": 50,
+      "maxWordsWarning": 300
+    },
+    {
+      "key": "experience",
+      "label": "Experience",
+      "icon": "briefcase",
+      "multiline": true,
+      "placeholder": "Paste your most relevant role's bullet points..."
+    },
+    {
+      "key": "education",
+      "label": "Education",
+      "icon": "cap",
+      "multiline": true,
+      "placeholder": "e.g. B.Tech CSE, HPTU Hamirpur, 2025-2029"
+    },
+    {
+      "key": "skills",
+      "label": "Skills",
+      "icon": "bolt",
+      "multiline": true,
+      "placeholder": "e.g. C++, JavaScript, React, Node.js, MongoDB, Git",
+      "minSkillsWarning": 5,
+      "maxSkillsWarning": 20
+    },
+    {
+      "key": "featured",
+      "label": "Featured / Projects",
+      "icon": "folder",
+      "multiline": true,
+      "placeholder": "List project titles + one-line descriptions + links"
+    }
+  ],
+  "scoreBands": {
+    "good": { "min": 7.5, "color": "#35C48F" },
+    "warning": { "min": 5, "color": "#F5A623" },
+    "poor": { "min": 0, "color": "#E5484D" }
+  },
+  "targetRoleKeywords": {
+    "sde": ["data structures", "algorithms", "system design", "react", "node", "javascript", "python", "java", "c++", "sql", "git", "api", "aws", "docker"]
+  }
+}
