@@ -6,31 +6,30 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const MODEL = "claude-sonnet-4-6";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// gemini-3.5-flash is on Google's free tier as of early 2026.
+// If this model name stops working, check https://ai.google.dev/gemini-api/docs/models
+// for the current free-tier model name and swap it in below.
+const MODEL = "gemini-3.5-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-async function callClaude(prompt, maxTokens = 1000) {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+async function callGemini(prompt) {
+  const response = await fetch(GEMINI_URL, {
     method: "POST",
-    headers: {
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: prompt }],
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.4 },
     }),
   });
 
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`Anthropic API error: ${response.status} ${errText}`);
+    throw new Error(`Gemini API error: ${response.status} ${errText}`);
   }
 
   const json = await response.json();
-  const text = (json.content || []).map((c) => c.text || "").join("").trim();
+  const text = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
   return text.replace(/```json|```/g, "").trim();
 }
 
@@ -52,7 +51,7 @@ Score each section 0-10. Be honest and critical. For headline and about, give ON
 {"overall_score":0,"sections":{"headline":{"score":0,"strengths":[],"issues":[],"rewrite_suggestion":""},"about":{"score":0,"strengths":[],"issues":[],"rewrite_suggestion":""},"experience":{"score":0,"strengths":[],"issues":[]},"education":{"score":0,"strengths":[],"issues":[]},"skills":{"score":0,"strengths":[],"issues":[]},"featured":{"score":0,"strengths":[],"issues":[]}},"top_3_priority_fixes":[]}`;
 
   try {
-    const clean = await callClaude(prompt, 1000);
+    const clean = await callGemini(prompt);
     const parsed = JSON.parse(clean);
     res.json(parsed);
   } catch (err) {
@@ -76,7 +75,7 @@ Return EXACTLY this JSON shape (use empty string if a section isn't found):
 For "skills", return a comma-separated list. For "experience", combine role titles and bullet points into one text block, most recent first.`;
 
   try {
-    const clean = await callClaude(prompt, 1000);
+    const clean = await callGemini(prompt);
     const parsed = JSON.parse(clean);
     res.json(parsed);
   } catch (err) {
