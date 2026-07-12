@@ -1,3 +1,14 @@
+const path = require('path');
+
+// Serve static files (HTML, CSS, JS) from root directory
+app.use(express.static(path.join(__dirname)));
+
+// Serve index.html on root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
