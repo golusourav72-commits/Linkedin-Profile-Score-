@@ -15,7 +15,7 @@ let profileData = {};
 
 // ---------- Init ----------
 async function init() {
-  const res = await fetch("rubric.json");
+  const res = await fetch("/rubric.json");
   RUBRIC = await res.json();
 
   RUBRIC.sections.forEach((s) => (profileData[s.key] = ""));
