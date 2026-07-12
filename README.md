@@ -1,16 +1,16 @@
 # Signal Check — LinkedIn Profile Scorer
 
-A diagnostic tool that scores your LinkedIn profile section-by-section (headline, about, experience, education, skills, featured) using rule-based checks + Claude API analysis, with rewrite suggestions.
+A diagnostic tool that scores your LinkedIn profile section-by-section (headline, about, experience, education, skills, featured) using rule-based checks + Gemini API analysis, with rewrite suggestions.
 
 ## Project structure
 
 ```
 linkedin-scorer/
 ├── index.html        # Page structure
-├── css/style.css      # Dark diagnostic theme
-├── js/script.js       # Frontend logic — rule checks, form rendering, PDF upload
-├── js/rubric.json      # Config — section definitions, scoring thresholds
-├── server.js          # Express backend — proxies Claude API calls securely
+├── css/style.css     # Dark diagnostic theme
+├── script.js         # Frontend logic — rule checks, form rendering, PDF upload
+├── rubric.json       # Config — section definitions, scoring thresholds
+├── server.js         # Express backend — proxies Gemini API calls securely
 ├── package.json
 ├── .env.example
 └── README.md
@@ -18,11 +18,11 @@ linkedin-scorer/
 
 ## Why there's a backend
 
-Your Anthropic API key must never be visible in frontend code (anyone can view-source and steal it). `server.js` holds the key server-side; the browser only ever talks to your own backend.
+Your  Gemini API key must never be visible in frontend code (anyone can view-source and steal it). `server.js` holds the key server-side; the browser only ever talks to your own backend.
 
 ## Setup
 
-1. **Get an API key** from [console.anthropic.com](https://console.anthropic.com)
+1. **Get an API key from aistudio.google.com/apikey
 
 2. **Install backend dependencies:**
    ```bash
@@ -63,7 +63,7 @@ Your Anthropic API key must never be visible in frontend code (anyone can view-s
 ## Deploying
 
 - **Frontend**: any static host (GitHub Pages, Vercel, Netlify) — just update `BACKEND_URL` in `js/script.js` to your deployed backend's URL
-- **Backend**: Render, Railway, or Fly.io — set `ANTHROPIC_API_KEY` as an environment variable in your host's dashboard, never commit `.env`
+- **Backend**: Render, Railway, or Fly.io — set `GEMINI_API_KEY` as an environment variable in your host's dashboard, never commit `.env`
 
 
 
