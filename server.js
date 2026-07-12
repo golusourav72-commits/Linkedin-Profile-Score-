@@ -1,5 +1,11 @@
 const path = require('path');
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
 
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: "2mb" }));
 // Serve static files (HTML, CSS, JS) from root directory
 app.use(express.static(path.join(__dirname)));
 
@@ -9,13 +15,7 @@ app.get('/', (req, res) => {
 });
 
 
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
 
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: "2mb" }));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // gemini-3.5-flash is on Google's free tier as of early 2026.
