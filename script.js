@@ -8,7 +8,7 @@ const ICONS = {
   folder: "fa-solid fa-folder-open",
 };
 
-const BACKEND_URL = "http://localhost:3001"; // change to your deployed backend URL in production
+const BACKEND_URL = ""; // change to your deployed backend URL in production
 
 let RUBRIC = null;
 let profileData = {};
