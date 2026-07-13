@@ -10,8 +10,18 @@ const ICONS = {
 
 const BACKEND_URL = ""; // change to your deployed backend URL in production
 
+const EXAMPLE_PROFILE = {
+  headline: "Aspiring SDE | DSA & System Design | MERN Stack | Building CoreDevs India",
+  about: "Second-year Computer Science student focused on backend engineering and data structures. I've built and deployed 3 full-stack projects including a real-time multiplayer chess platform (MERN + Socket.io) and a LinkedIn profile scoring tool powered by the Gemini API. Currently solving DSA problems daily following a structured 24-week plan, and leading a 200+ member developer community across multiple colleges. Looking for SDE internship opportunities where I can contribute to real production systems.",
+  experience: "Full Stack Development Intern — Built and shipped REST APIs used by 500+ users, reduced average response time by 30% through query optimization, and integrated a third-party payment gateway end-to-end.",
+  education: "B.Tech, Computer Science & Engineering, HPTU Hamirpur (2025–2029)",
+  skills: "C++, JavaScript, React, Node.js, Express, MongoDB, Git, REST APIs, Socket.io, Data Structures & Algorithms",
+  featured: "Signal Check — LinkedIn profile scorer (Node.js, Gemini API) — github.com/example/signal-check\nReal-time Multiplayer Chess Platform (MERN, Socket.io) — github.com/example/chess-app",
+};
+
 let RUBRIC = null;
 let profileData = {};
+let lastResult = null;
 
 // ---------- Init ----------
 async function init() {
@@ -187,8 +197,10 @@ async function runAnalysis() {
 
 // ---------- Render results ----------
 function renderResults(result) {
+  lastResult = result;
   document.getElementById("resultsLoading").classList.add("hidden");
   document.getElementById("resultsContent").classList.remove("hidden");
+  document.getElementById("resultsActions").classList.remove("hidden");
 
   const score = result.overall_score || 0;
   const color = bandColor(score / 10);
@@ -233,7 +245,7 @@ function renderBreakdown(aiSections) {
           <span class="section-icon-box"><i class="${ICONS[section.icon]}"></i></span>
           ${section.label}
         </span>
-        ${ai.score !== undefined ? `<span class="section-card-score" style="color:${scoreColor}">${ai.score}/10</span>` : ""}
+        ${ai.score !== undefined ? `<span class="section-card-score" style="color:${scoreColor}">${Math.round(ai.score * 10)}/100</span>` : ""}
       </div>
       ${ai.score !== undefined ? `
         <div class="score-bar-track">
@@ -248,6 +260,105 @@ function renderBreakdown(aiSections) {
   });
 }
 
+// ---------- Clear form ----------
+function clearForm() {
+  RUBRIC.sections.forEach((s) => (profileData[s.key] = ""));
+  renderForm();
+  updateRunButtonState();
+
+  document.getElementById("uploadTitle").textContent = "Upload LinkedIn PDF export";
+  document.getElementById("formError").textContent = "";
+  document.getElementById("pdfInput").value = "";
+
+  lastResult = null;
+  document.getElementById("resultsContent").classList.add("hidden");
+  document.getElementById("resultsLoading").classList.add("hidden");
+  document.getElementById("resultsActions").classList.add("hidden");
+  document.getElementById("resultsEmpty").classList.remove("hidden");
+  document.getElementById("breakdown").classList.add("hidden");
+}
+
+// ---------- Load example profile ----------
+function loadExample() {
+  RUBRIC.sections.forEach((s) => (profileData[s.key] = EXAMPLE_PROFILE[s.key] || ""));
+  renderForm();
+  updateRunButtonState();
+  document.getElementById("formError").textContent = "";
+}
+
+// ---------- Copy results to clipboard ----------
+function copyResults() {
+  if (!lastResult) return;
+  const btn = document.getElementById("copyBtn");
+  const original = btn.innerHTML;
+
+  let text = `Signal Check Report\nOverall Score: ${Math.round(lastResult.overall_score || 0)}/100\n\n`;
+  text += `Priority Fixes:\n`;
+  (lastResult.top_3_priority_fixes || []).forEach((f, i) => {
+    text += `${i + 1}. ${f}\n`;
+  });
+  text += `\nSection Scores:\n`;
+  RUBRIC.sections.forEach((s) => {
+    const sec = (lastResult.sections || {})[s.key];
+    if (sec && sec.score !== undefined) {
+      text += `${s.label}: ${Math.round(sec.score * 10)}/100\n`;
+    }
+  });
+
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+      setTimeout(() => (btn.innerHTML = original), 1500);
+    })
+    .catch(() => {
+      document.getElementById("formError").textContent = "Couldn't copy — try selecting the text manually.";
+    });
+}
+
+// ---------- Download report as PDF ----------
+function downloadReport() {
+  if (!lastResult || !window.jspdf) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const marginX = 14;
+  const pageWidth = doc.internal.pageSize.getWidth() - marginX * 2;
+  let y = 20;
+
+  doc.setFontSize(18);
+  doc.text("Signal Check — LinkedIn Profile Report", marginX, y);
+  y += 10;
+
+  doc.setFontSize(13);
+  doc.text(`Overall Score: ${Math.round(lastResult.overall_score || 0)}/100`, marginX, y);
+  y += 10;
+
+  doc.setFontSize(14);
+  doc.text("Priority Fixes", marginX, y);
+  y += 8;
+  doc.setFontSize(11);
+  (lastResult.top_3_priority_fixes || []).forEach((f, i) => {
+    const lines = doc.splitTextToSize(`${i + 1}. ${f}`, pageWidth);
+    doc.text(lines, marginX, y);
+    y += lines.length * 6 + 2;
+  });
+
+  y += 6;
+  doc.setFontSize(14);
+  doc.text("Section Scores", marginX, y);
+  y += 8;
+  doc.setFontSize(11);
+  RUBRIC.sections.forEach((s) => {
+    const sec = (lastResult.sections || {})[s.key];
+    if (sec && sec.score !== undefined) {
+      doc.text(`${s.label}: ${Math.round(sec.score * 10)}/100`, marginX, y);
+      y += 7;
+    }
+  });
+
+  doc.save("signal-check-report.pdf");
+}
+
 // ---------- Event bindings ----------
 function bindEvents() {
   document.getElementById("chooseFileBtn").addEventListener("click", () => {
@@ -258,6 +369,10 @@ function bindEvents() {
     if (file) handlePdfUpload(file);
   });
   document.getElementById("runScanBtn").addEventListener("click", runAnalysis);
+  document.getElementById("clearBtn").addEventListener("click", clearForm);
+  document.getElementById("exampleBtn").addEventListener("click", loadExample);
+  document.getElementById("copyBtn").addEventListener("click", copyResults);
+  document.getElementById("downloadBtn").addEventListener("click", downloadReport);
 }
 
 document.addEventListener("DOMContentLoaded", init);
