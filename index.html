@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,6 +43,10 @@
         </form>
 
         <button id="runScanBtn" class="btn-primary" disabled>Run Scan</button>
+        <div class="secondary-actions">
+          <button id="exampleBtn" type="button" class="btn-ghost"><i class="fa-solid fa-wand-magic-sparkles"></i> Try example</button>
+          <button id="clearBtn" type="button" class="btn-ghost"><i class="fa-solid fa-rotate-left"></i> Clear</button>
+        </div>
         <div id="formError" class="error-text"></div>
 
       </section>
@@ -56,6 +61,11 @@
           Analyzing signal strength...
         </div>
 
+        <div id="resultsActions" class="results-actions hidden">
+          <button id="copyBtn" type="button" class="btn-ghost"><i class="fa-solid fa-copy"></i> Copy results</button>
+          <button id="downloadBtn" type="button" class="btn-ghost"><i class="fa-solid fa-download"></i> Download report</button>
+        </div>
+
         <div id="resultsContent" class="hidden">
           <div class="gauge-wrap">
             <svg id="gaugeSvg" viewBox="0 0 220 130" width="220" height="130">
@@ -65,7 +75,9 @@
               <circle cx="110" cy="110" r="6" fill="#E8ECF1" />
             </svg>
             <div class="gauge-label">
-              <div id="gaugeScore" class="gauge-score">0</div>
+              <div class="gauge-score-row">
+                <span id="gaugeScore" class="gauge-score">0</span><span class="gauge-score-max">/100</span>
+              </div>
               <div class="gauge-caption">Signal Score</div>
             </div>
           </div>
@@ -87,6 +99,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
