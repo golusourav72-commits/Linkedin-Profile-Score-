@@ -170,9 +170,17 @@ main.grid { display: contents; }
   padding: 16px;
   margin-bottom: 20px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 13px;
   transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+/* Force the button onto its own full-width row so icon+text get
+   enough room on the first line and the title doesn't wrap oddly */
+.upload-box .btn-outline {
+  flex: 1 1 100%;
+  margin-top: 2px;
 }
 .upload-box:hover {
   border-color: var(--primary);
@@ -306,6 +314,47 @@ main.grid { display: contents; }
   min-height: 16px;
 }
 
+/* Ghost buttons — secondary actions (clear, example, copy, download) */
+.secondary-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-ghost {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 7px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.btn-ghost:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-dim);
+}
+.btn-ghost:active { transform: scale(0.98); }
+.btn-ghost i { font-size: 11px; }
+
+/* Copy / download row above the results */
+.results-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 18px;
+}
+.results-actions .btn-ghost { font-size: 12px; }
+
 /* ============ RESULTS PANEL (main content, top) ============ */
 .results-panel {
   grid-area: results;
@@ -361,11 +410,25 @@ main.grid { display: contents; }
   text-align: center;
 }
 
+.gauge-score-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+}
+
 .gauge-score {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 36px;
   font-weight: 600;
   color: var(--gold);
+}
+
+.gauge-score-max {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted-dim);
 }
 
 .gauge-caption {
