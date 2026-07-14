@@ -31,6 +31,7 @@ async function init() {
   RUBRIC.sections.forEach((s) => (profileData[s.key] = ""));
   renderForm();
   bindEvents();
+  renderScanHistory();
 }
 
 // ---------- Render form fields from rubric.json ----------
@@ -54,20 +55,77 @@ function renderForm() {
     input.placeholder = section.placeholder;
     input.id = `field-${section.key}`;
     input.value = profileData[section.key] || "";
+
+    const counter = document.createElement("div");
+    counter.className = "field-counter";
+    counter.id = `counter-${section.key}`;
+
+    const updateCounter = () => updateFieldCounter(section, input.value, counter);
+    updateCounter();
+
     input.addEventListener("input", (e) => {
       profileData[section.key] = e.target.value;
+      updateCounter();
       updateRunButtonState();
     });
 
     field.appendChild(label);
     field.appendChild(input);
+    field.appendChild(counter);
     form.appendChild(field);
   });
+
+  updateProgress();
+}
+
+// ---------- Live char/word counter, driven by rubric limits ----------
+function updateFieldCounter(section, value, el) {
+  const trimmed = value.trim();
+
+  if (section.key === "skills") {
+    const count = trimmed ? trimmed.split(",").map((s) => s.trim()).filter(Boolean).length : 0;
+    el.textContent = `${count} skill${count === 1 ? "" : "s"}`;
+    el.classList.toggle(
+      "field-counter-warn",
+      count > 0 && (count < (section.minSkillsWarning || 0) || count > (section.maxSkillsWarning || Infinity))
+    );
+    return;
+  }
+
+  if (typeof section.maxChars === "number") {
+    const len = value.length;
+    el.textContent = `${len}/${section.maxChars} characters`;
+    el.classList.toggle("field-counter-warn", len > section.maxChars || (len > 0 && len < (section.minCharsWarning || 0)));
+    return;
+  }
+
+  if (section.minWordsWarning || section.maxWordsWarning) {
+    const words = trimmed ? trimmed.split(/\s+/).length : 0;
+    el.textContent = `${words} words`;
+    el.classList.toggle(
+      "field-counter-warn",
+      words > 0 && (words < (section.minWordsWarning || 0) || words > (section.maxWordsWarning || Infinity))
+    );
+    return;
+  }
+
+  el.textContent = trimmed ? `${trimmed.split(/\s+/).length} words` : "";
+}
+
+// ---------- Sidebar progress indicator ----------
+function updateProgress() {
+  const total = RUBRIC.sections.length;
+  const filled = Object.values(profileData).filter((v) => v.trim().length > 0).length;
+  const pct = total ? Math.round((filled / total) * 100) : 0;
+
+  document.getElementById("progressFill").style.width = `${pct}%`;
+  document.getElementById("progressLabel").textContent = `${filled}/${total} sections filled`;
 }
 
 function updateRunButtonState() {
   const filledCount = Object.values(profileData).filter((v) => v.trim().length > 0).length;
   document.getElementById("runScanBtn").disabled = filledCount === 0;
+  updateProgress();
 }
 
 // ---------- Rule-based checks (instant, no API needed) ----------
@@ -199,12 +257,16 @@ async function runAnalysis() {
 function renderResults(result) {
   lastResult = result;
   document.getElementById("resultsLoading").classList.add("hidden");
-  document.getElementById("resultsContent").classList.remove("hidden");
+  const resultsContent = document.getElementById("resultsContent");
+  resultsContent.classList.remove("hidden");
+  resultsContent.classList.remove("fade-in");
+  void resultsContent.offsetWidth; // restart animation on repeated scans
+  resultsContent.classList.add("fade-in");
   document.getElementById("resultsActions").classList.remove("hidden");
 
- const rawScore = result.overall_score || 0; // 0–10 scale, same as section scores
-   const score = rawScore * 10; // scale to /100 for display
-   const color = bandColor(rawScore);
+  const rawScore = result.overall_score || 0; // 0–10 scale, same as section scores
+  const score = rawScore * 10; // scale to /100 for display
+  const color = bandColor(rawScore);
   const pct = Math.max(0, Math.min(100, score)) / 100;
   const angle = -90 + pct * 180;
   const rad = (angle * Math.PI) / 180;
@@ -213,18 +275,111 @@ function renderResults(result) {
   document.getElementById("gaugeArc").setAttribute("stroke", color);
   document.getElementById("gaugeNeedle").setAttribute("x2", 110 + 68 * Math.cos(rad));
   document.getElementById("gaugeNeedle").setAttribute("y2", 110 + 68 * Math.sin(rad));
-  document.getElementById("gaugeScore").textContent = Math.round(score);
   document.getElementById("gaugeScore").style.color = color;
+  animateScoreCountUp(Math.round(score));
 
   const priorityList = document.getElementById("priorityList");
   priorityList.innerHTML = "";
-  (result.top_3_priority_fixes || []).forEach((fix) => {
+  (result.top_3_priority_fixes || []).forEach((fix, i) => {
     const li = document.createElement("li");
     li.textContent = fix;
+    li.style.animationDelay = `${i * 0.12}s`;
+    li.classList.add("fade-in-item");
     priorityList.appendChild(li);
   });
 
   renderBreakdown(result.sections || {});
+  renderAtsMatch();
+  saveScanToHistory(Math.round(score));
+}
+
+// ---------- Animate the gauge number counting up ----------
+function animateScoreCountUp(target) {
+  const el = document.getElementById("gaugeScore");
+  const duration = 700;
+  const start = performance.now();
+
+  function tick(now) {
+    const progress = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(target * eased);
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ---------- ATS keyword match, using rubric.json's targetRoleKeywords ----------
+function renderAtsMatch() {
+  const keywordSet = (RUBRIC.targetRoleKeywords && RUBRIC.targetRoleKeywords.sde) || [];
+  if (!keywordSet.length) {
+    document.getElementById("atsMatch").classList.add("hidden");
+    return;
+  }
+
+  const combinedText = Object.values(profileData).join(" ").toLowerCase();
+  const matched = keywordSet.filter((kw) => combinedText.includes(kw.toLowerCase()));
+  const missing = keywordSet.filter((kw) => !matched.includes(kw));
+  const pct = Math.round((matched.length / keywordSet.length) * 100);
+
+  document.getElementById("atsMatch").classList.remove("hidden");
+  document.getElementById("atsMatchFill").style.width = `${pct}%`;
+  document.getElementById("atsMatchFill").style.background = pct >= 60 ? "#057642" : pct >= 35 ? "#C98A1E" : "#B0290D";
+  document.getElementById("atsMatchPct").textContent = `${pct}% match`;
+
+  const matchedEl = document.getElementById("atsMatched");
+  matchedEl.innerHTML = matched.map((kw) => `<span class="chip chip-matched">${kw}</span>`).join("");
+
+  const missingEl = document.getElementById("atsMissing");
+  missingEl.innerHTML = missing.length
+    ? missing.map((kw) => `<span class="chip chip-missing">${kw}</span>`).join("")
+    : `<span class="chip chip-matched">All target keywords present 🎉</span>`;
+}
+
+// ---------- Scan history (stored locally in this browser) ----------
+function saveScanToHistory(score) {
+  const history = getScanHistory();
+  history.unshift({ score, date: new Date().toISOString() });
+  localStorage.setItem("signalCheckHistory", JSON.stringify(history.slice(0, 10)));
+  renderScanHistory();
+}
+
+function getScanHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("signalCheckHistory")) || [];
+  } catch {
+    return [];
+  }
+}
+
+function renderScanHistory() {
+  const history = getScanHistory();
+  const listEl = document.getElementById("historyList");
+  const panelEl = document.getElementById("historyPanel");
+
+  if (!history.length) {
+    panelEl.classList.add("hidden");
+    return;
+  }
+  panelEl.classList.remove("hidden");
+
+  listEl.innerHTML = history
+    .map((h, i) => {
+      const d = new Date(h.date);
+      const label = d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+      const diff = i < history.length - 1 ? h.score - history[i + 1].score : null;
+      const diffHtml =
+        diff === null || diff === 0
+          ? ""
+          : diff > 0
+          ? `<span class="history-diff history-diff-up">+${diff}</span>`
+          : `<span class="history-diff history-diff-down">${diff}</span>`;
+      return `<div class="history-row">
+        <span class="history-score">${h.score}/100</span>
+        <span class="history-date">${label}</span>
+        ${diffHtml}
+      </div>`;
+    })
+    .join("");
 }
 
 function renderBreakdown(aiSections) {
@@ -277,6 +432,7 @@ function clearForm() {
   document.getElementById("resultsActions").classList.add("hidden");
   document.getElementById("resultsEmpty").classList.remove("hidden");
   document.getElementById("breakdown").classList.add("hidden");
+  document.getElementById("atsMatch").classList.add("hidden");
 }
 
 // ---------- Load example profile ----------
@@ -292,7 +448,8 @@ function copyResults() {
   if (!lastResult) return;
   const btn = document.getElementById("copyBtn");
   const original = btn.innerHTML;
-let text = `Signal Check Report\nOverall Score: ${Math.round((lastResult.overall_score || 0) * 10)}/100\n\n`;
+
+  let text = `Signal Check Report\nOverall Score: ${Math.round((lastResult.overall_score || 0) * 10)}/100\n\n`;
   text += `Priority Fixes:\n`;
   (lastResult.top_3_priority_fixes || []).forEach((f, i) => {
     text += `${i + 1}. ${f}\n`;
@@ -330,7 +487,7 @@ function downloadReport() {
   y += 10;
 
   doc.setFontSize(13);
-  doc.text(`Overall Score: ${Math.round((lastResult.overall_score || 0)*10) }/100`, marginX, y);
+  doc.text(`Overall Score: ${Math.round((lastResult.overall_score || 0) * 10)}/100`, marginX, y);
   y += 10;
 
   doc.setFontSize(14);
@@ -359,6 +516,116 @@ function downloadReport() {
   doc.save("signal-check-report.pdf");
 }
 
+// ---------- Share result as a downloadable image card ----------
+function shareResultAsImage() {
+  if (!lastResult) return;
+
+  const score = Math.round((lastResult.overall_score || 0) * 10);
+  const color = score >= 75 ? "#057642" : score >= 50 ? "#C98A1E" : "#B0290D";
+  const W = 800,
+    H = 500;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  // Background
+  const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+  bgGrad.addColorStop(0, "#0A2A4A");
+  bgGrad.addColorStop(1, "#0A66C2");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Card
+  ctx.fillStyle = "#FFFFFF";
+  roundRect(ctx, 40, 40, W - 80, H - 80, 20);
+  ctx.fill();
+
+  // Title
+  ctx.fillStyle = "#1D2226";
+  ctx.font = "700 30px Arial";
+  ctx.fillText("Signal Check", 76, 100);
+  ctx.font = "400 15px Arial";
+  ctx.fillStyle = "#56687A";
+  ctx.fillText("LinkedIn Profile Report", 76, 125);
+
+  // Score circle
+  ctx.beginPath();
+  ctx.arc(160, 240, 80, 0, Math.PI * 2);
+  ctx.strokeStyle = "#DCE1E6";
+  ctx.lineWidth = 14;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(160, 240, 80, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * score) / 100);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 14;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  ctx.fillStyle = color;
+  ctx.font = "700 44px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(String(score), 160, 252);
+  ctx.font = "400 13px Arial";
+  ctx.fillStyle = "#56687A";
+  ctx.fillText("/ 100", 160, 272);
+  ctx.textAlign = "left";
+
+  // Priority fixes
+  ctx.fillStyle = "#1D2226";
+  ctx.font = "700 16px Arial";
+  ctx.fillText("Top Priority Fixes", 300, 175);
+
+  ctx.font = "400 13px Arial";
+  let y = 205;
+  (lastResult.top_3_priority_fixes || []).slice(0, 3).forEach((fix, i) => {
+    const lines = wrapCanvasText(ctx, `${i + 1}. ${fix}`, 400);
+    lines.forEach((line) => {
+      ctx.fillText(line, 300, y);
+      y += 20;
+    });
+    y += 8;
+  });
+
+  ctx.font = "400 12px Arial";
+  ctx.fillStyle = "#8A97A3";
+  ctx.fillText("Generated with Signal Check", 76, H - 60);
+
+  const link = document.createElement("a");
+  link.download = "signal-check-result.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = text.split(" ");
+  const lines = [];
+  let line = "";
+  words.forEach((word) => {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
 // ---------- Event bindings ----------
 function bindEvents() {
   document.getElementById("chooseFileBtn").addEventListener("click", () => {
@@ -373,6 +640,7 @@ function bindEvents() {
   document.getElementById("exampleBtn").addEventListener("click", loadExample);
   document.getElementById("copyBtn").addEventListener("click", copyResults);
   document.getElementById("downloadBtn").addEventListener("click", downloadReport);
+  document.getElementById("shareBtn").addEventListener("click", shareResultAsImage);
 }
 
 document.addEventListener("DOMContentLoaded", init);
