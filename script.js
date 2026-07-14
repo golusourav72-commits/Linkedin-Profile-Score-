@@ -330,7 +330,7 @@ function downloadReport() {
   y += 10;
 
   doc.setFontSize(13);
-  doc.text(`Overall Score: ${Math.round(lastResult.overall_score || 0)}/100`, marginX, y);
+  doc.text(`Overall Score: ${Math.round((lastResult.overall_score || 0)*10) }/100`, marginX, y);
   y += 10;
 
   doc.setFontSize(14);
