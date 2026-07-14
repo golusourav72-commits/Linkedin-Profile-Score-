@@ -202,8 +202,9 @@ function renderResults(result) {
   document.getElementById("resultsContent").classList.remove("hidden");
   document.getElementById("resultsActions").classList.remove("hidden");
 
-  const score = result.overall_score || 0;
-  const color = bandColor(score / 10);
+ const rawScore = result.overall_score || 0; // 0–10 scale, same as section scores
+   const score = rawScore * 10; // scale to /100 for display
+   const color = bandColor(rawScore);
   const pct = Math.max(0, Math.min(100, score)) / 100;
   const angle = -90 + pct * 180;
   const rad = (angle * Math.PI) / 180;
@@ -291,8 +292,7 @@ function copyResults() {
   if (!lastResult) return;
   const btn = document.getElementById("copyBtn");
   const original = btn.innerHTML;
-
-  let text = `Signal Check Report\nOverall Score: ${Math.round(lastResult.overall_score || 0)}/100\n\n`;
+let text = `Signal Check Report\nOverall Score: ${Math.round((lastResult.overall_score || 0) * 10)}/100\n\n`;
   text += `Priority Fixes:\n`;
   (lastResult.top_3_priority_fixes || []).forEach((f, i) => {
     text += `${i + 1}. ${f}\n`;
