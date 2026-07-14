@@ -1,32 +1,36 @@
 :root {
-  /* Core palette — LinkedIn-inspired professional blues */
-  --bg: #F3F2EF;
-  --header-navy: #0A2A4A;
-  --header-navy-2: #0A66C2;
-  --panel: #FFFFFF;
-  --panel-alt: #FAFBFC;
-  --border: #DCE1E6;
-  --border-hover: #B9C4CE;
-  --input-bg: #F8F9FA;
+  /* Core palette — dark premium theme with glowing blue→green accents */
+  --bg: #0A0E17;
+  --bg-glow: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(59, 130, 246, 0.14), transparent);
+  --header-navy: #0A1220;
+  --header-navy-2: #142238;
+  --panel: #12172480;
+  --panel-solid: #131826;
+  --panel-alt: #0E1320;
+  --border: #232B3D;
+  --border-hover: #333F58;
+  --input-bg: #0C1018;
 
-  --text: #1D2226;
-  --muted: #56687A;
-  --muted-dim: #8A97A3;
+  --text: #F5F7FA;
+  --muted: #8B96AB;
+  --muted-dim: #5C6780;
 
-  --primary: #0A66C2;
-  --primary-dark: #004182;
-  --primary-light: #70B5F9;
-  --primary-dim: rgba(10, 102, 194, 0.08);
+  --primary: #3B82F6;
+  --primary-dark: #1D4ED8;
+  --primary-light: #60A5FA;
+  --primary-dim: rgba(59, 130, 246, 0.12);
 
-  --gold: #C98A1E;
-  --gold-dim: rgba(201, 138, 30, 0.12);
-  --green: #057642;
-  --green-dim: rgba(5, 118, 66, 0.10);
-  --red: #B0290D;
+  --gold: #F5A623;
+  --gold-dim: rgba(245, 166, 35, 0.12);
+  --green: #22D3A6;
+  --green-dim: rgba(34, 211, 166, 0.12);
+  --red: #F87171;
 
-  --shadow-panel: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
-  --shadow-panel-hover: 0 2px 6px rgba(0,0,0,0.06), 0 10px 28px rgba(0,0,0,0.09);
-  --shadow-sidebar: 0 1px 3px rgba(0,0,0,0.05), 0 12px 32px rgba(10,42,74,0.08);
+  --shadow-panel: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  --shadow-panel-hover: 0 2px 8px rgba(0,0,0,0.4), 0 14px 36px rgba(0,0,0,0.45);
+  --shadow-sidebar: 0 1px 3px rgba(0,0,0,0.3), 0 16px 40px rgba(0,0,0,0.4);
+  --glow-blue: 0 0 32px rgba(59, 130, 246, 0.35);
+  --glow-green: 0 0 32px rgba(34, 211, 166, 0.3);
 }
 
 * { box-sizing: border-box; }
@@ -36,8 +40,11 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   background: var(--bg);
+  background-image: var(--bg-glow);
+  background-attachment: fixed;
   color: var(--text);
   font-family: 'Inter', sans-serif;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -96,16 +103,38 @@ main.grid { display: contents; }
   .header { border-radius: 0 0 14px 14px; padding: 24px 20px; }
 }
 
+.header-tag-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
 .header-tag {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin-bottom: 12px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11.5px;
   color: rgba(255,255,255,0.65);
   letter-spacing: 2px;
   text-transform: uppercase;
+}
+
+.premium-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: linear-gradient(90deg, rgba(245, 166, 35, 0.18), rgba(245, 166, 35, 0.08));
+  border: 1px solid rgba(245, 166, 35, 0.4);
+  color: var(--gold);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
 /* Recast as a "live / actively analyzing" presence dot — the same visual
@@ -155,8 +184,10 @@ main.grid { display: contents; }
 
 .panel {
   background: var(--panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 22px;
   box-shadow: var(--shadow-panel);
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
@@ -394,20 +425,28 @@ main.grid { display: contents; }
 
 .hidden { display: none !important; }
 
-.gauge-wrap { position: relative; width: 220px; height: 130px; }
+.gauge-wrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto;
+}
 
-/* Recolor the inline SVG stroke attributes via CSS (overrides presentation attrs) */
-#gaugeSvg path:first-child { stroke: var(--border); }
-#gaugeArc { stroke: var(--gold); transition: stroke-dasharray 0.9s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.9s ease; }
-#gaugeNeedle { stroke: var(--header-navy); transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
-#gaugeSvg circle { fill: var(--header-navy); }
+#gaugeArc {
+  transition: stroke-dasharray 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.55)) drop-shadow(0 0 22px rgba(34, 211, 166, 0.3));
+}
 
 .gauge-label {
   position: absolute;
-  top: 60px;
+  top: 0;
   left: 0;
   right: 0;
-  text-align: center;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .gauge-score-row {
@@ -419,14 +458,14 @@ main.grid { display: contents; }
 
 .gauge-score {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 36px;
-  font-weight: 600;
-  color: var(--gold);
+  font-size: 44px;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .gauge-score-max {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--muted-dim);
 }
@@ -437,8 +476,32 @@ main.grid { display: contents; }
   color: var(--muted);
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  margin-top: 2px;
+  margin-top: 4px;
 }
+
+/* Status label + star rating under the ring */
+.gauge-status {
+  text-align: center;
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+.gauge-status-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.gauge-stars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--gold);
+  font-size: 14px;
+}
+.gauge-stars i.star-empty { color: var(--border-hover); }
 
 .priority-fixes { width: 100%; margin-top: 12px; }
 
@@ -534,6 +597,20 @@ main.grid { display: contents; }
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quality-word {
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--muted);
 }
 
 .score-bar-track {
