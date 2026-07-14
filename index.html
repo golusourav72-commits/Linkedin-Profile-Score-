@@ -38,6 +38,11 @@
           <input type="file" id="pdfInput" accept="application/pdf" hidden />
         </div>
 
+        <div class="progress-row">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-label" id="progressLabel">0/6 sections filled</div>
+        </div>
+
         <form id="profileForm" class="form-card">
           <!-- Section inputs are injected here by script.js from rubric.json -->
         </form>
@@ -48,6 +53,11 @@
           <button id="clearBtn" type="button" class="btn-ghost"><i class="fa-solid fa-rotate-left"></i> Clear</button>
         </div>
         <div id="formError" class="error-text"></div>
+
+        <div class="history-panel" id="historyPanel">
+          <div class="section-title">Scan History</div>
+          <div id="historyList" class="history-list"></div>
+        </div>
 
       </section>
 
@@ -63,6 +73,7 @@
 
         <div id="resultsActions" class="results-actions hidden">
           <button id="copyBtn" type="button" class="btn-ghost"><i class="fa-solid fa-copy"></i> Copy results</button>
+          <button id="shareBtn" type="button" class="btn-ghost"><i class="fa-solid fa-image"></i> Share image</button>
           <button id="downloadBtn" type="button" class="btn-ghost"><i class="fa-solid fa-download"></i> Download report</button>
         </div>
 
@@ -85,6 +96,17 @@
           <div class="priority-fixes">
             <div class="section-title">Priority Fixes</div>
             <ol id="priorityList"></ol>
+          </div>
+
+          <div class="ats-match" id="atsMatch">
+            <div class="section-title">ATS Keyword Match — SDE Roles</div>
+            <div class="ats-match-bar-row">
+              <div class="score-bar-track"><div class="score-bar-fill" id="atsMatchFill"></div></div>
+              <span class="ats-match-pct" id="atsMatchPct">0%</span>
+            </div>
+            <div class="keyword-chips" id="atsMatched"></div>
+            <div class="ats-missing-label">Missing keywords worth adding:</div>
+            <div class="keyword-chips keyword-chips-missing" id="atsMissing"></div>
           </div>
         </div>
       </section>
