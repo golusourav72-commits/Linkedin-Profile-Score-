@@ -175,9 +175,17 @@ function ruleChecks(data) {
 }
 
 function bandColor(score0to10) {
-  if (score0to10 >= 7.5) return "#35C48F";
+  if (score0to10 >= 7.5) return "#22D3A6";
   if (score0to10 >= 5) return "#F5A623";
-  return "#E5484D";
+  return "#F87171";
+}
+
+function qualityLabel(score0to10) {
+  if (score0to10 >= 9) return "Perfect";
+  if (score0to10 >= 7.5) return "Great";
+  if (score0to10 >= 6) return "Very Good";
+  if (score0to10 >= 5) return "Good";
+  return "Needs Work";
 }
 
 // ---------- PDF upload + parse ----------
@@ -266,17 +274,12 @@ function renderResults(result) {
 
   const rawScore = result.overall_score || 0; // 0–10 scale, same as section scores
   const score = rawScore * 10; // scale to /100 for display
-  const color = bandColor(rawScore);
   const pct = Math.max(0, Math.min(100, score)) / 100;
-  const angle = -90 + pct * 180;
-  const rad = (angle * Math.PI) / 180;
+  const circumference = 2 * Math.PI * 90; // r=90
 
-  document.getElementById("gaugeArc").setAttribute("stroke-dasharray", `${pct * 283} 283`);
-  document.getElementById("gaugeArc").setAttribute("stroke", color);
-  document.getElementById("gaugeNeedle").setAttribute("x2", 110 + 68 * Math.cos(rad));
-  document.getElementById("gaugeNeedle").setAttribute("y2", 110 + 68 * Math.sin(rad));
-  document.getElementById("gaugeScore").style.color = color;
+  document.getElementById("gaugeArc").setAttribute("stroke-dasharray", `${pct * circumference} ${circumference}`);
   animateScoreCountUp(Math.round(score));
+  renderScoreStatus(rawScore);
 
   const priorityList = document.getElementById("priorityList");
   priorityList.innerHTML = "";
@@ -291,6 +294,35 @@ function renderResults(result) {
   renderBreakdown(result.sections || {});
   renderAtsMatch();
   saveScanToHistory(Math.round(score));
+}
+
+// ---------- Status label + star rating under the ring ----------
+function renderScoreStatus(rawScore) {
+  const labelEl = document.getElementById("gaugeStatusLabel");
+  const starsEl = document.getElementById("gaugeStars");
+
+  let label, color;
+  if (rawScore >= 8.5) {
+    label = "Excellent! 🎉";
+    color = "var(--green)";
+  } else if (rawScore >= 7) {
+    label = "Strong Profile";
+    color = "var(--green)";
+  } else if (rawScore >= 5) {
+    label = "Good, Needs Polish";
+    color = "var(--gold)";
+  } else {
+    label = "Needs Work";
+    color = "var(--red)";
+  }
+
+  labelEl.textContent = label;
+  labelEl.style.color = color;
+
+  const filledStars = Math.max(0, Math.min(5, Math.round(rawScore / 2)));
+  starsEl.innerHTML = Array.from({ length: 5 }, (_, i) =>
+    i < filledStars ? `<i class="fa-solid fa-star"></i>` : `<i class="fa-solid fa-star star-empty"></i>`
+  ).join("");
 }
 
 // ---------- Animate the gauge number counting up ----------
@@ -394,6 +426,7 @@ function renderBreakdown(aiSections) {
     card.className = "section-card";
 
     const scoreColor = ai.score !== undefined ? bandColor(ai.score) : "#7C8798";
+    const qualityWord = ai.score !== undefined ? qualityLabel(ai.score) : "";
 
     card.innerHTML = `
       <div class="section-card-head">
@@ -401,7 +434,7 @@ function renderBreakdown(aiSections) {
           <span class="section-icon-box"><i class="${ICONS[section.icon]}"></i></span>
           ${section.label}
         </span>
-        ${ai.score !== undefined ? `<span class="section-card-score" style="color:${scoreColor}">${Math.round(ai.score * 10)}/100</span>` : ""}
+        ${ai.score !== undefined ? `<span class="section-card-score" style="color:${scoreColor}">${Math.round(ai.score * 10)}/100 <span class="quality-word">${qualityWord}</span></span>` : ""}
       </div>
       ${ai.score !== undefined ? `
         <div class="score-bar-track">
