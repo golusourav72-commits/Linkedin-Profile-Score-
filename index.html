@@ -57,6 +57,11 @@
       <!-- LEFT: INPUT PANEL -->
       <section class="panel">
 
+        <div class="field role-select-field">
+          <label class="field-label" for="targetRoleSelect"><i class="fa-solid fa-crosshairs"></i> Target Role</label>
+          <select id="targetRoleSelect"></select>
+        </div>
+
         <div class="upload-box" id="uploadBox">
           <div class="upload-icon"><i class="fa-solid fa-file-pdf"></i></div>
           <div class="upload-text">
@@ -137,7 +142,7 @@
           </div>
 
           <div class="ats-match" id="atsMatch">
-            <div class="section-title">ATS Keyword Match — SDE Roles</div>
+            <div class="section-title">ATS Keyword Match — <span id="atsRoleLabel">SDE Roles</span></div>
             <div class="ats-match-bar-row">
               <div class="score-bar-track"><div class="score-bar-fill" id="atsMatchFill"></div></div>
               <span class="ats-match-pct" id="atsMatchPct">0%</span>
