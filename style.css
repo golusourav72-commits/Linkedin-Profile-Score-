@@ -283,7 +283,8 @@ main.grid { display: contents; }
 .field-label i { color: var(--primary); font-size: 12px; }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
   background: var(--input-bg);
   border: 1px solid var(--border);
@@ -296,8 +297,20 @@ main.grid { display: contents; }
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
+.field select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B96AB' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 34px;
+}
+
+.role-select-field { margin-bottom: 20px; }
+
 .field textarea { resize: vertical; line-height: 1.5; }
-.field input:focus, .field textarea:focus {
+.field input:focus, .field textarea:focus, .field select:focus {
   border-color: var(--primary);
   background: var(--panel);
   box-shadow: 0 0 0 3px var(--primary-dim);
