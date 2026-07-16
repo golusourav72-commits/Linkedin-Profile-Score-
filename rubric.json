@@ -54,7 +54,36 @@
     "warning": { "min": 5, "color": "#F5A623" },
     "poor": { "min": 0, "color": "#E5484D" }
   },
+  "targetRoles": [
+    { "key": "sde", "label": "Software Development (SDE)" },
+    { "key": "full_stack", "label": "Full Stack Developer" },
+    { "key": "frontend", "label": "Frontend Developer" },
+    { "key": "backend", "label": "Backend Developer" },
+    { "key": "ai_ml", "label": "AI / ML Engineer" },
+    { "key": "data_science", "label": "Data Science / ML" },
+    { "key": "data_analytics", "label": "Data Analytics" },
+    { "key": "devops", "label": "DevOps Engineer" },
+    { "key": "cybersecurity", "label": "Cybersecurity" },
+    { "key": "product_management", "label": "Product Management" },
+    { "key": "business_analyst", "label": "Business Analyst" },
+    { "key": "digital_marketing", "label": "Digital Marketing" },
+    { "key": "ui_ux_design", "label": "UI/UX Design" },
+    { "key": "finance", "label": "Finance" }
+  ],
   "targetRoleKeywords": {
-    "sde": ["data structures", "algorithms", "system design", "react", "node", "javascript", "python", "java", "c++", "sql", "git", "api", "aws", "docker"]
+    "sde": ["data structures", "algorithms", "system design", "react", "node", "javascript", "python", "java", "c++", "sql", "git", "api", "aws", "docker"],
+    "full_stack": ["react", "node.js", "express", "mongodb", "sql", "rest api", "javascript", "typescript", "git", "html", "css", "docker", "aws"],
+    "frontend": ["react", "javascript", "typescript", "html", "css", "tailwind", "responsive design", "redux", "webpack", "figma", "accessibility", "next.js"],
+    "backend": ["node.js", "express", "java", "spring boot", "python", "django", "sql", "rest api", "microservices", "docker", "kubernetes", "redis", "system design"],
+    "ai_ml": ["machine learning", "deep learning", "pytorch", "tensorflow", "llm", "nlp", "computer vision", "neural networks", "transformers", "huggingface", "mlops", "python"],
+    "data_science": ["python", "machine learning", "deep learning", "pandas", "numpy", "tensorflow", "pytorch", "sql", "statistics", "data visualization", "scikit-learn", "nlp", "computer vision", "tableau"],
+    "data_analytics": ["sql", "excel", "power bi", "tableau", "data cleaning", "statistics", "python", "r", "dashboards", "data visualization", "kpi reporting", "a/b testing"],
+    "devops": ["ci/cd", "docker", "kubernetes", "jenkins", "terraform", "ansible", "aws", "azure", "gcp", "linux", "monitoring", "infrastructure as code", "git", "bash scripting"],
+    "cybersecurity": ["network security", "penetration testing", "siem", "incident response", "vulnerability assessment", "firewall", "encryption", "owasp", "soc", "threat intelligence", "iso 27001", "nist", "kali linux", "wireshark"],
+    "product_management": ["product strategy", "roadmap", "stakeholder management", "user research", "agile", "scrum", "a/b testing", "kpi", "market research", "product lifecycle", "jira", "wireframing", "go-to-market"],
+    "business_analyst": ["requirements gathering", "stakeholder management", "process improvement", "sql", "business intelligence", "use cases", "gap analysis", "agile", "user stories", "data analysis", "visio", "jira"],
+    "digital_marketing": ["seo", "sem", "content marketing", "social media marketing", "google analytics", "email marketing", "ppc", "brand strategy", "conversion rate optimization", "copywriting", "hubspot", "campaign management"],
+    "ui_ux_design": ["figma", "user research", "wireframing", "prototyping", "design systems", "usability testing", "adobe xd", "sketch", "interaction design", "user personas", "accessibility", "information architecture"],
+    "finance": ["financial modeling", "valuation", "excel", "financial analysis", "budgeting", "forecasting", "accounting", "equity research", "risk management", "bloomberg terminal", "dcf", "p&l"]
   }
 }
