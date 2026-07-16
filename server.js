@@ -92,7 +92,10 @@ ${rawText}
 // Takes the filled-in profile sections and asks Gemini to score them.
 app.post("/api/analyze", async (req, res) => {
   try {
-    const profileData = req.body || {};
+    const { targetRole, ...profileData } = req.body || {};
+
+    const roleMeta = (RUBRIC.targetRoles || []).find((r) => r.key === targetRole);
+    const roleLabel = roleMeta ? roleMeta.label : "Software Development (SDE)";
 
     const sectionsText = SECTION_KEYS.map((key) => {
       const section = RUBRIC.sections.find((s) => s.key === key);
@@ -101,9 +104,9 @@ app.post("/api/analyze", async (req, res) => {
     }).join("\n\n");
 
     const prompt = `
-You are an expert LinkedIn profile reviewer helping a computer science student targeting SDE roles at top product companies.
+You are an expert LinkedIn profile reviewer helping a candidate targeting **${roleLabel}** roles at top companies.
 
-Review the following LinkedIn profile sections and score them.
+Review the following LinkedIn profile sections and score them specifically for a ${roleLabel} career path — judge relevance, keywords, and impact through that lens (e.g. for Data Science focus on ML/stats signal, for Product Management focus on strategy/stakeholder signal, for Digital Marketing focus on campaign/growth signal, for UI/UX Design focus on design process/tools signal, for SDE focus on coding/systems signal).
 
 ${sectionsText}
 
