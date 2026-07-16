@@ -30,8 +30,24 @@ async function init() {
 
   RUBRIC.sections.forEach((s) => (profileData[s.key] = ""));
   renderForm();
+  renderRoleOptions();
   bindEvents();
   renderScanHistory();
+}
+
+// ---------- Populate the target-role dropdown from rubric.json ----------
+function renderRoleOptions() {
+  const select = document.getElementById("targetRoleSelect");
+  const roles = RUBRIC.targetRoles || [{ key: "sde", label: "Software Development (SDE)" }];
+  select.innerHTML = roles.map((r) => `<option value="${r.key}">${r.label}</option>`).join("");
+  select.addEventListener("change", () => {
+    if (lastResult) renderAtsMatch(); // live-update the match if results are already showing
+  });
+}
+
+function getSelectedRole() {
+  const select = document.getElementById("targetRoleSelect");
+  return select ? select.value : "sde";
 }
 
 // ---------- Render form fields from rubric.json ----------
@@ -246,7 +262,7 @@ async function runAnalysis() {
     const res = await fetch(`${BACKEND_URL}/api/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profileData),
+      body: JSON.stringify({ ...profileData, targetRole: getSelectedRole() }),
     });
     if (!res.ok) throw new Error("Backend error");
     const result = await res.json();
@@ -342,7 +358,12 @@ function animateScoreCountUp(target) {
 
 // ---------- ATS keyword match, using rubric.json's targetRoleKeywords ----------
 function renderAtsMatch() {
-  const keywordSet = (RUBRIC.targetRoleKeywords && RUBRIC.targetRoleKeywords.sde) || [];
+  const roleKey = getSelectedRole();
+  const roleMeta = (RUBRIC.targetRoles || []).find((r) => r.key === roleKey);
+  const keywordSet = (RUBRIC.targetRoleKeywords && RUBRIC.targetRoleKeywords[roleKey]) || [];
+
+  document.getElementById("atsRoleLabel").textContent = roleMeta ? roleMeta.label : "SDE Roles";
+
   if (!keywordSet.length) {
     document.getElementById("atsMatch").classList.add("hidden");
     return;
