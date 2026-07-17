@@ -49,7 +49,7 @@
         <div class="premium-badge"><i class="fa-solid fa-crown"></i> AI-Powered Analysis</div>
       </div>
       <h1>Signal Check</h1>
-      <p class="subtitle">Upload your LinkedIn "Save to PDF" export, or paste sections manually. Get a section-by-section scan — what's strong, what's leaking signal, and exactly how to fix it.</p>
+      <p class="subtitle">Scan your LinkedIn profile, resume, and GitHub activity together. Get one combined Career Profile Score — what's strong, what's leaking signal, and exactly how to fix it.</p>
     </header>
 
     <main class="grid">
@@ -62,26 +62,66 @@
           <select id="targetRoleSelect"></select>
         </div>
 
-        <div class="upload-box" id="uploadBox">
-          <div class="upload-icon"><i class="fa-solid fa-file-pdf"></i></div>
-          <div class="upload-text">
-            <div class="upload-title" id="uploadTitle">Upload LinkedIn PDF export</div>
-            <div class="upload-hint">Profile → More → Save to PDF, then upload it here to auto-fill every section</div>
+        <details class="pillar-section" open>
+          <summary class="pillar-summary"><i class="fa-brands fa-linkedin"></i> LinkedIn Profile <span class="pillar-weight">40%</span></summary>
+          <div class="pillar-body">
+            <div class="upload-box" id="uploadBox">
+              <div class="upload-icon"><i class="fa-solid fa-file-pdf"></i></div>
+              <div class="upload-text">
+                <div class="upload-title" id="uploadTitle">Upload LinkedIn PDF export</div>
+                <div class="upload-hint">Profile → More → Save to PDF, then upload it here to auto-fill every section</div>
+              </div>
+              <button class="btn-outline" id="chooseFileBtn">Choose file</button>
+              <input type="file" id="pdfInput" accept="application/pdf" hidden />
+            </div>
+
+            <div class="progress-row">
+              <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+              <div class="progress-label" id="progressLabel">0/6 sections filled</div>
+            </div>
+
+            <form id="profileForm" class="form-card">
+              <!-- Section inputs are injected here by script.js from rubric.json -->
+            </form>
           </div>
-          <button class="btn-outline" id="chooseFileBtn">Choose file</button>
-          <input type="file" id="pdfInput" accept="application/pdf" hidden />
-        </div>
+        </details>
 
-        <div class="progress-row">
-          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-          <div class="progress-label" id="progressLabel">0/6 sections filled</div>
-        </div>
+        <details class="pillar-section">
+          <summary class="pillar-summary"><i class="fa-solid fa-file-lines"></i> Resume <span class="pillar-weight">40%</span></summary>
+          <div class="pillar-body">
+            <div class="upload-box" id="resumeUploadBox">
+              <div class="upload-icon"><i class="fa-solid fa-file-pdf"></i></div>
+              <div class="upload-text">
+                <div class="upload-title" id="resumeUploadTitle">Upload resume PDF</div>
+                <div class="upload-hint">Or fill sections in manually below</div>
+              </div>
+              <button class="btn-outline" id="chooseResumeBtn">Choose file</button>
+              <input type="file" id="resumePdfInput" accept="application/pdf" hidden />
+            </div>
 
-        <form id="profileForm" class="form-card">
-          <!-- Section inputs are injected here by script.js from rubric.json -->
-        </form>
+            <div class="progress-row">
+              <div class="progress-track"><div class="progress-fill" id="resumeProgressFill"></div></div>
+              <div class="progress-label" id="resumeProgressLabel">0/5 sections filled</div>
+            </div>
 
-        <button id="runScanBtn" class="btn-primary" disabled>Run Scan</button>
+            <form id="resumeForm" class="form-card">
+              <!-- Resume section inputs injected here by script.js from rubric.json's resumeSections -->
+            </form>
+          </div>
+        </details>
+
+        <details class="pillar-section">
+          <summary class="pillar-summary"><i class="fa-brands fa-github"></i> GitHub <span class="pillar-weight">20%</span></summary>
+          <div class="pillar-body">
+            <div class="field">
+              <label class="field-label" for="githubUsernameInput"><i class="fa-brands fa-github"></i> GitHub Username</label>
+              <input type="text" id="githubUsernameInput" placeholder="e.g. golusourav72-commits" />
+              <div class="field-hint">We only read public profile and repo data — no login needed.</div>
+            </div>
+          </div>
+        </details>
+
+        <button id="runScanBtn" class="btn-primary" disabled>Run Full Scan</button>
         <div class="secondary-actions">
           <button id="exampleBtn" type="button" class="btn-ghost"><i class="fa-solid fa-wand-magic-sparkles"></i> Try example</button>
           <button id="clearBtn" type="button" class="btn-ghost"><i class="fa-solid fa-rotate-left"></i> Clear</button>
@@ -98,7 +138,7 @@
       <!-- RIGHT: RESULTS PANEL -->
       <section class="panel results-panel">
         <div id="resultsEmpty" class="results-empty">
-          Fill in at least one section and run a scan to see your score.
+          Fill in your LinkedIn, resume, and/or GitHub username, then run a scan to see your combined Career Score.
         </div>
 
         <div id="resultsLoading" class="results-loading hidden">
@@ -112,6 +152,8 @@
         </div>
 
         <div id="resultsContent" class="hidden">
+          <div id="pillarBadges" class="pillar-badges"></div>
+
           <div class="gauge-wrap">
             <svg id="gaugeSvg" viewBox="0 0 220 220" width="220" height="220">
               <defs>
@@ -127,7 +169,7 @@
               <div class="gauge-score-row">
                 <span id="gaugeScore" class="gauge-score">0</span><span class="gauge-score-max">/100</span>
               </div>
-              <div class="gauge-caption">Signal Score</div>
+              <div class="gauge-caption">Career Score</div>
             </div>
           </div>
 
