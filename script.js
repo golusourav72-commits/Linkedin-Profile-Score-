@@ -19,9 +19,20 @@ const EXAMPLE_PROFILE = {
   featured: "Signal Check — LinkedIn profile scorer (Node.js, Gemini API) — github.com/example/signal-check\nReal-time Multiplayer Chess Platform (MERN, Socket.io) — github.com/example/chess-app",
 };
 
+const EXAMPLE_RESUME = {
+  summary: "Second-year Computer Science student with hands-on full-stack development experience, seeking SDE internship opportunities to build scalable, production-grade applications.",
+  experience: "Full Stack Development Intern, NoviTech R&D — Built and shipped REST APIs used by 500+ users; reduced average response time by 30% through query optimization.",
+  projects: "Signal Check — AI-powered career profile scorer (Node.js, Express, Gemini API). Real-time Multiplayer Chess Platform (MERN, Socket.io).",
+  education: "B.Tech, Computer Science & Engineering, HPTU Hamirpur (2025–2029)",
+  skills: "C++, JavaScript, React, Node.js, Express, MongoDB, Git, REST APIs, Data Structures & Algorithms",
+};
+const EXAMPLE_GITHUB_USERNAME = "golusourav72-commits";
+
 let RUBRIC = null;
 let profileData = {};
-let lastResult = null;
+let resumeData = {};
+let githubResult = null;
+let lastResult = null; // combined result across all filled pillars
 
 // ---------- Init ----------
 async function init() {
@@ -29,7 +40,9 @@ async function init() {
   RUBRIC = await res.json();
 
   RUBRIC.sections.forEach((s) => (profileData[s.key] = ""));
+  RUBRIC.resumeSections.forEach((s) => (resumeData[s.key] = ""));
   renderForm();
+  renderResumeForm();
   renderRoleOptions();
   bindEvents();
   renderScanHistory();
@@ -128,6 +141,56 @@ function updateFieldCounter(section, value, el) {
   el.textContent = trimmed ? `${trimmed.split(/\s+/).length} words` : "";
 }
 
+// ---------- Render resume form fields from rubric.json's resumeSections ----------
+function renderResumeForm() {
+  const form = document.getElementById("resumeForm");
+  form.innerHTML = "";
+
+  RUBRIC.resumeSections.forEach((section) => {
+    const field = document.createElement("div");
+    field.className = "field";
+
+    const label = document.createElement("label");
+    label.className = "field-label";
+    label.innerHTML = `<i class="${ICONS[section.icon]}"></i> ${section.label}`;
+
+    const input = section.multiline ? document.createElement("textarea") : document.createElement("input");
+    if (section.multiline) input.rows = 3;
+    input.placeholder = section.placeholder;
+    input.id = `resume-field-${section.key}`;
+    input.value = resumeData[section.key] || "";
+
+    const counter = document.createElement("div");
+    counter.className = "field-counter";
+    counter.id = `resume-counter-${section.key}`;
+
+    const updateCounter = () => updateFieldCounter(section, input.value, counter);
+    updateCounter();
+
+    input.addEventListener("input", (e) => {
+      resumeData[section.key] = e.target.value;
+      updateCounter();
+      updateRunButtonState();
+    });
+
+    field.appendChild(label);
+    field.appendChild(input);
+    field.appendChild(counter);
+    form.appendChild(field);
+  });
+
+  updateResumeProgress();
+}
+
+function updateResumeProgress() {
+  const total = RUBRIC.resumeSections.length;
+  const filled = Object.values(resumeData).filter((v) => v.trim().length > 0).length;
+  const pct = total ? Math.round((filled / total) * 100) : 0;
+
+  document.getElementById("resumeProgressFill").style.width = `${pct}%`;
+  document.getElementById("resumeProgressLabel").textContent = `${filled}/${total} sections filled`;
+}
+
 // ---------- Sidebar progress indicator ----------
 function updateProgress() {
   const total = RUBRIC.sections.length;
@@ -139,9 +202,12 @@ function updateProgress() {
 }
 
 function updateRunButtonState() {
-  const filledCount = Object.values(profileData).filter((v) => v.trim().length > 0).length;
-  document.getElementById("runScanBtn").disabled = filledCount === 0;
+  const linkedinFilled = Object.values(profileData).some((v) => v.trim().length > 0);
+  const resumeFilled = Object.values(resumeData).some((v) => v.trim().length > 0);
+  const githubFilled = (document.getElementById("githubUsernameInput")?.value || "").trim().length > 0;
+  document.getElementById("runScanBtn").disabled = !(linkedinFilled || resumeFilled || githubFilled);
   updateProgress();
+  updateResumeProgress();
 }
 
 // ---------- Rule-based checks (instant, no API needed) ----------
@@ -204,30 +270,34 @@ function qualityLabel(score0to10) {
   return "Needs Work";
 }
 
-// ---------- PDF upload + parse ----------
+// ---------- Shared PDF text extraction ----------
+async function extractPdfText(file) {
+  const pdfjsLib = window["pdfjs-dist/build/pdf"] || window.pdfjsLib;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  const buf = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+  let rawText = "";
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    rawText += content.items.map((it) => it.str).join(" ") + "\n";
+  }
+  return rawText.slice(0, 6000);
+}
+
+// ---------- PDF upload + parse: LinkedIn ----------
 async function handlePdfUpload(file) {
   const uploadTitle = document.getElementById("uploadTitle");
   uploadTitle.textContent = "Parsing your PDF...";
   document.getElementById("formError").textContent = "";
 
   try {
-    const pdfjsLib = window["pdfjs-dist/build/pdf"] || window.pdfjsLib;
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-    const buf = await file.arrayBuffer();
-    const doc = await pdfjsLib.getDocument({ data: buf }).promise;
-    let rawText = "";
-    for (let i = 1; i <= doc.numPages; i++) {
-      const page = await doc.getPage(i);
-      const content = await page.getTextContent();
-      rawText += content.items.map((it) => it.str).join(" ") + "\n";
-    }
-
+    const rawText = await extractPdfText(file);
     const res = await fetch(`${BACKEND_URL}/api/parse-pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rawText: rawText.slice(0, 6000) }),
+      body: JSON.stringify({ rawText, mode: "linkedin" }),
     });
     if (!res.ok) throw new Error("Backend error");
     const parsed = await res.json();
@@ -245,8 +315,37 @@ async function handlePdfUpload(file) {
   }
 }
 
-// ---------- Run AI analysis via backend ----------
-async function runAnalysis() {
+// ---------- PDF upload + parse: Resume ----------
+async function handleResumePdfUpload(file) {
+  const uploadTitle = document.getElementById("resumeUploadTitle");
+  uploadTitle.textContent = "Parsing your resume...";
+  document.getElementById("formError").textContent = "";
+
+  try {
+    const rawText = await extractPdfText(file);
+    const res = await fetch(`${BACKEND_URL}/api/parse-pdf`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rawText, mode: "resume" }),
+    });
+    if (!res.ok) throw new Error("Backend error");
+    const parsed = await res.json();
+
+    RUBRIC.resumeSections.forEach((s) => {
+      resumeData[s.key] = parsed[s.key] || "";
+    });
+    renderResumeForm();
+    updateRunButtonState();
+    uploadTitle.textContent = `Loaded: ${file.name}`;
+  } catch (err) {
+    uploadTitle.textContent = "Upload resume PDF";
+    document.getElementById("formError").textContent =
+      "Couldn't parse that resume PDF. Fill sections in manually below instead.";
+  }
+}
+
+// ---------- Run full scan across all filled-in pillars ----------
+async function runFullScan() {
   const btn = document.getElementById("runScanBtn");
   const errorEl = document.getElementById("formError");
   btn.disabled = true;
@@ -258,28 +357,64 @@ async function runAnalysis() {
   document.getElementById("resultsLoading").classList.remove("hidden");
   document.getElementById("breakdown").classList.add("hidden");
 
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/analyze`, {
+  const targetRole = getSelectedRole();
+  const linkedinFilled = Object.values(profileData).some((v) => v.trim().length > 0);
+  const resumeFilled = Object.values(resumeData).some((v) => v.trim().length > 0);
+  const githubUsername = (document.getElementById("githubUsernameInput")?.value || "").trim();
+
+  const jobs = {};
+  if (linkedinFilled) {
+    jobs.linkedin = fetch(`${BACKEND_URL}/api/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...profileData, targetRole: getSelectedRole() }),
+      body: JSON.stringify({ ...profileData, targetRole }),
+    }).then((r) => (r.ok ? r.json() : Promise.reject(new Error("linkedin analyze failed"))));
+  }
+  if (resumeFilled) {
+    jobs.resume = fetch(`${BACKEND_URL}/api/analyze-resume`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...resumeData, targetRole }),
+    }).then((r) => (r.ok ? r.json() : Promise.reject(new Error("resume analyze failed"))));
+  }
+  if (githubUsername) {
+    jobs.github = fetch(`${BACKEND_URL}/api/github-score`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: githubUsername }),
+    }).then((r) => (r.ok ? r.json() : Promise.reject(new Error("github score failed"))));
+  }
+
+  try {
+    const keys = Object.keys(jobs);
+    const settled = await Promise.allSettled(Object.values(jobs));
+    const pillars = {};
+    let anySucceeded = false;
+    settled.forEach((s, i) => {
+      if (s.status === "fulfilled") {
+        pillars[keys[i]] = s.value;
+        anySucceeded = true;
+      } else {
+        pillars[keys[i]] = null;
+      }
     });
-    if (!res.ok) throw new Error("Backend error");
-    const result = await res.json();
-    renderResults(result);
+
+    if (!anySucceeded) throw new Error("All pillar scans failed");
+    renderCombinedResults(pillars);
   } catch (err) {
-    errorEl.textContent = "Analysis failed. Is your backend server running on " + BACKEND_URL + "?";
+    errorEl.textContent = "Scan failed. Is your backend server running? Check your GitHub username and try again.";
     document.getElementById("resultsLoading").classList.add("hidden");
     document.getElementById("resultsEmpty").classList.remove("hidden");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Run Scan";
+    btn.textContent = "Run Full Scan";
   }
 }
 
-// ---------- Render results ----------
-function renderResults(result) {
-  lastResult = result;
+// ---------- Render combined results across all scanned pillars ----------
+function renderCombinedResults(pillars) {
+  lastResult = pillars;
+  githubResult = pillars.github || null;
   document.getElementById("resultsLoading").classList.add("hidden");
   const resultsContent = document.getElementById("resultsContent");
   resultsContent.classList.remove("hidden");
@@ -288,7 +423,18 @@ function renderResults(result) {
   resultsContent.classList.add("fade-in");
   document.getElementById("resultsActions").classList.remove("hidden");
 
-  const rawScore = result.overall_score || 0; // 0–10 scale, same as section scores
+  const weights = RUBRIC.pillarWeights || { linkedin: 0.4, resume: 0.4, github: 0.2 };
+  const scoreOf = { linkedin: pillars.linkedin?.overall_score, resume: pillars.resume?.overall_score, github: pillars.github?.score };
+
+  let weightedSum = 0;
+  let totalWeight = 0;
+  Object.keys(scoreOf).forEach((p) => {
+    if (typeof scoreOf[p] === "number") {
+      weightedSum += scoreOf[p] * (weights[p] || 0);
+      totalWeight += weights[p] || 0;
+    }
+  });
+  const rawScore = totalWeight ? weightedSum / totalWeight : 0; // 0–10 scale
   const score = rawScore * 10; // scale to /100 for display
   const pct = Math.max(0, Math.min(100, score)) / 100;
   const circumference = 2 * Math.PI * 90; // r=90
@@ -296,20 +442,63 @@ function renderResults(result) {
   document.getElementById("gaugeArc").setAttribute("stroke-dasharray", `${pct * circumference} ${circumference}`);
   animateScoreCountUp(Math.round(score));
   renderScoreStatus(rawScore);
+  renderPillarBadges(pillars, scoreOf);
+
+  // ---- Combined priority fixes (round-robin across pillars) ----
+  const perPillarFixes = [
+    (pillars.linkedin?.top_3_priority_fixes || []).map((f) => ({ tag: "LinkedIn", text: f })),
+    (pillars.resume?.top_3_priority_fixes || []).map((f) => ({ tag: "Resume", text: f })),
+    (pillars.github?.issues || []).map((f) => ({ tag: "GitHub", text: f })),
+  ];
+  const combinedFixes = [];
+  let round = 0;
+  while (combinedFixes.length < 6 && perPillarFixes.some((arr) => arr[round])) {
+    perPillarFixes.forEach((arr) => {
+      if (arr[round] && combinedFixes.length < 6) combinedFixes.push(arr[round]);
+    });
+    round++;
+  }
 
   const priorityList = document.getElementById("priorityList");
   priorityList.innerHTML = "";
-  (result.top_3_priority_fixes || []).forEach((fix, i) => {
+  combinedFixes.forEach((fix, i) => {
     const li = document.createElement("li");
-    li.textContent = fix;
-    li.style.animationDelay = `${i * 0.12}s`;
+    li.innerHTML = `<span class="pillar-tag">${fix.tag}</span> ${fix.text}`;
+    li.style.animationDelay = `${i * 0.1}s`;
     li.classList.add("fade-in-item");
     priorityList.appendChild(li);
   });
 
-  renderBreakdown(result.sections || {});
+  // ---- Breakdown grid: accumulate cards from every scanned pillar ----
+  document.getElementById("breakdownGrid").innerHTML = "";
+  if (pillars.linkedin) appendBreakdownCards("LinkedIn", "fa-brands fa-linkedin", RUBRIC.sections, pillars.linkedin.sections || {}, ruleChecks(profileData));
+  if (pillars.resume) appendBreakdownCards("Resume", "fa-solid fa-file-lines", RUBRIC.resumeSections, pillars.resume.sections || {}, null);
+  if (pillars.github) appendGithubCard(pillars.github);
+
   renderAtsMatch();
   saveScanToHistory(Math.round(score));
+}
+
+// ---------- Pillar sub-score badges above the combined gauge ----------
+function renderPillarBadges(pillars, scoreOf) {
+  const wrap = document.getElementById("pillarBadges");
+  const defs = [
+    { key: "linkedin", label: "LinkedIn", icon: "fa-brands fa-linkedin" },
+    { key: "resume", label: "Resume", icon: "fa-solid fa-file-lines" },
+    { key: "github", label: "GitHub", icon: "fa-brands fa-github" },
+  ];
+
+  wrap.innerHTML = defs
+    .map((d) => {
+      const has = pillars[d.key] && typeof scoreOf[d.key] === "number";
+      const val = has ? Math.round(scoreOf[d.key] * 10) : null;
+      return `<div class="pillar-badge ${has ? "" : "pillar-badge-empty"}">
+        <i class="${d.icon}"></i>
+        <span class="pillar-badge-label">${d.label}</span>
+        <span class="pillar-badge-score">${has ? val + "/100" : "—"}</span>
+      </div>`;
+    })
+    .join("");
 }
 
 // ---------- Status label + star rating under the ring ----------
@@ -369,7 +558,9 @@ function renderAtsMatch() {
     return;
   }
 
-  const combinedText = Object.values(profileData).join(" ").toLowerCase();
+  const combinedText = [...Object.values(profileData), ...Object.values(resumeData), ...(githubResult?.topLanguages || [])]
+    .join(" ")
+    .toLowerCase();
   const matched = keywordSet.filter((kw) => combinedText.includes(kw.toLowerCase()));
   const missing = keywordSet.filter((kw) => !matched.includes(kw));
   const pct = Math.round((matched.length / keywordSet.length) * 100);
@@ -435,13 +626,11 @@ function renderScanHistory() {
     .join("");
 }
 
-function renderBreakdown(aiSections) {
-  const flags = ruleChecks(profileData);
+function appendBreakdownCards(pillarLabel, pillarIcon, sectionDefs, aiSections, flags) {
   const grid = document.getElementById("breakdownGrid");
-  grid.innerHTML = "";
   document.getElementById("breakdown").classList.remove("hidden");
 
-  RUBRIC.sections.forEach((section) => {
+  sectionDefs.forEach((section) => {
     const ai = aiSections[section.key] || {};
     const card = document.createElement("div");
     card.className = "section-card";
@@ -453,7 +642,7 @@ function renderBreakdown(aiSections) {
       <div class="section-card-head">
         <span class="section-card-title">
           <span class="section-icon-box"><i class="${ICONS[section.icon]}"></i></span>
-          ${section.label}
+          ${section.label} <span class="pillar-tag">${pillarLabel}</span>
         </span>
         ${ai.score !== undefined ? `<span class="section-card-score" style="color:${scoreColor}">${Math.round(ai.score * 10)}/100 <span class="quality-word">${qualityWord}</span></span>` : ""}
       </div>
@@ -461,7 +650,7 @@ function renderBreakdown(aiSections) {
         <div class="score-bar-track">
           <div class="score-bar-fill" style="width:${ai.score * 10}%; background:${scoreColor}"></div>
         </div>` : ""}
-      ${flags[section.key]?.length ? `<ul class="flags-list">${flags[section.key].map((f) => `<li>${f}</li>`).join("")}</ul>` : ""}
+      ${flags?.[section.key]?.length ? `<ul class="flags-list">${flags[section.key].map((f) => `<li>${f}</li>`).join("")}</ul>` : ""}
       ${ai.issues?.length ? `<ul class="issues-list">${ai.issues.map((f) => `<li>${f}</li>`).join("")}</ul>` : ""}
       ${ai.strengths?.length ? `<ul class="strengths-list">${ai.strengths.map((f) => `<li>${f}</li>`).join("")}</ul>` : ""}
       ${ai.rewrite_suggestion ? `<div class="rewrite-box">Suggested rewrite: ${ai.rewrite_suggestion}</div>` : ""}
@@ -470,17 +659,46 @@ function renderBreakdown(aiSections) {
   });
 }
 
+function appendGithubCard(github) {
+  const grid = document.getElementById("breakdownGrid");
+  document.getElementById("breakdown").classList.remove("hidden");
+  const scoreColor = bandColor(github.score);
+
+  const card = document.createElement("div");
+  card.className = "section-card";
+  card.innerHTML = `
+    <div class="section-card-head">
+      <span class="section-card-title">
+        <span class="section-icon-box"><i class="fa-brands fa-github"></i></span>
+        Profile &amp; Activity <span class="pillar-tag">GitHub</span>
+      </span>
+      <span class="section-card-score" style="color:${scoreColor}">${Math.round(github.score * 10)}/100 <span class="quality-word">${qualityLabel(github.score)}</span></span>
+    </div>
+    <div class="score-bar-track"><div class="score-bar-fill" style="width:${github.score * 10}%; background:${scoreColor}"></div></div>
+    <div class="field-hint" style="margin-bottom:8px;">${github.publicRepos} public repos · ${github.followers} followers · ${(github.topLanguages || []).join(", ") || "no languages detected"}</div>
+    ${github.issues?.length ? `<ul class="issues-list">${github.issues.map((f) => `<li>${f}</li>`).join("")}</ul>` : ""}
+    ${github.strengths?.length ? `<ul class="strengths-list">${github.strengths.map((f) => `<li>${f}</li>`).join("")}</ul>` : ""}
+  `;
+  grid.appendChild(card);
+}
+
 // ---------- Clear form ----------
 function clearForm() {
   RUBRIC.sections.forEach((s) => (profileData[s.key] = ""));
+  RUBRIC.resumeSections.forEach((s) => (resumeData[s.key] = ""));
   renderForm();
+  renderResumeForm();
+  document.getElementById("githubUsernameInput").value = "";
   updateRunButtonState();
 
   document.getElementById("uploadTitle").textContent = "Upload LinkedIn PDF export";
+  document.getElementById("resumeUploadTitle").textContent = "Upload resume PDF";
   document.getElementById("formError").textContent = "";
   document.getElementById("pdfInput").value = "";
+  document.getElementById("resumePdfInput").value = "";
 
   lastResult = null;
+  githubResult = null;
   document.getElementById("resultsContent").classList.add("hidden");
   document.getElementById("resultsLoading").classList.add("hidden");
   document.getElementById("resultsActions").classList.add("hidden");
@@ -492,7 +710,10 @@ function clearForm() {
 // ---------- Load example profile ----------
 function loadExample() {
   RUBRIC.sections.forEach((s) => (profileData[s.key] = EXAMPLE_PROFILE[s.key] || ""));
+  RUBRIC.resumeSections.forEach((s) => (resumeData[s.key] = EXAMPLE_RESUME[s.key] || ""));
+  document.getElementById("githubUsernameInput").value = EXAMPLE_GITHUB_USERNAME;
   renderForm();
+  renderResumeForm();
   updateRunButtonState();
   document.getElementById("formError").textContent = "";
 }
@@ -503,17 +724,22 @@ function copyResults() {
   const btn = document.getElementById("copyBtn");
   const original = btn.innerHTML;
 
-  let text = `Signal Check Report\nOverall Score: ${Math.round((lastResult.overall_score || 0) * 10)}/100\n\n`;
-  text += `Priority Fixes:\n`;
-  (lastResult.top_3_priority_fixes || []).forEach((f, i) => {
-    text += `${i + 1}. ${f}\n`;
-  });
-  text += `\nSection Scores:\n`;
-  RUBRIC.sections.forEach((s) => {
-    const sec = (lastResult.sections || {})[s.key];
-    if (sec && sec.score !== undefined) {
-      text += `${s.label}: ${Math.round(sec.score * 10)}/100\n`;
-    }
+  const gauge = document.getElementById("gaugeScore").textContent;
+  let text = `Signal Check — Career Profile Report\nCombined Score: ${gauge}/100\n\n`;
+
+  if (lastResult.linkedin) {
+    text += `LinkedIn Score: ${Math.round((lastResult.linkedin.overall_score || 0) * 10)}/100\n`;
+  }
+  if (lastResult.resume) {
+    text += `Resume Score: ${Math.round((lastResult.resume.overall_score || 0) * 10)}/100\n`;
+  }
+  if (lastResult.github) {
+    text += `GitHub Score: ${Math.round((lastResult.github.score || 0) * 10)}/100\n`;
+  }
+
+  text += `\nPriority Fixes:\n`;
+  document.querySelectorAll("#priorityList li").forEach((li, i) => {
+    text += `${i + 1}. ${li.textContent}\n`;
   });
 
   navigator.clipboard
@@ -537,19 +763,25 @@ function downloadReport() {
   let y = 20;
 
   doc.setFontSize(18);
-  doc.text("Signal Check — LinkedIn Profile Report", marginX, y);
+  doc.text("Signal Check — Career Profile Report", marginX, y);
   y += 10;
 
   doc.setFontSize(13);
-  doc.text(`Overall Score: ${Math.round((lastResult.overall_score || 0) * 10)}/100`, marginX, y);
-  y += 10;
+  doc.text(`Combined Score: ${document.getElementById("gaugeScore").textContent}/100`, marginX, y);
+  y += 8;
+
+  doc.setFontSize(10);
+  if (lastResult.linkedin) doc.text(`  LinkedIn: ${Math.round((lastResult.linkedin.overall_score || 0) * 10)}/100`, marginX, (y += 6));
+  if (lastResult.resume) doc.text(`  Resume: ${Math.round((lastResult.resume.overall_score || 0) * 10)}/100`, marginX, (y += 6));
+  if (lastResult.github) doc.text(`  GitHub: ${Math.round((lastResult.github.score || 0) * 10)}/100`, marginX, (y += 6));
+  y += 6;
 
   doc.setFontSize(14);
   doc.text("Priority Fixes", marginX, y);
   y += 8;
   doc.setFontSize(11);
-  (lastResult.top_3_priority_fixes || []).forEach((f, i) => {
-    const lines = doc.splitTextToSize(`${i + 1}. ${f}`, pageWidth);
+  document.querySelectorAll("#priorityList li").forEach((li, i) => {
+    const lines = doc.splitTextToSize(`${i + 1}. ${li.textContent}`, pageWidth);
     doc.text(lines, marginX, y);
     y += lines.length * 6 + 2;
   });
@@ -559,22 +791,37 @@ function downloadReport() {
   doc.text("Section Scores", marginX, y);
   y += 8;
   doc.setFontSize(11);
-  RUBRIC.sections.forEach((s) => {
-    const sec = (lastResult.sections || {})[s.key];
-    if (sec && sec.score !== undefined) {
-      doc.text(`${s.label}: ${Math.round(sec.score * 10)}/100`, marginX, y);
-      y += 7;
-    }
-  });
+  if (lastResult.linkedin) {
+    RUBRIC.sections.forEach((s) => {
+      const sec = (lastResult.linkedin.sections || {})[s.key];
+      if (sec && sec.score !== undefined) {
+        doc.text(`[LinkedIn] ${s.label}: ${Math.round(sec.score * 10)}/100`, marginX, y);
+        y += 7;
+      }
+    });
+  }
+  if (lastResult.resume) {
+    RUBRIC.resumeSections.forEach((s) => {
+      const sec = (lastResult.resume.sections || {})[s.key];
+      if (sec && sec.score !== undefined) {
+        doc.text(`[Resume] ${s.label}: ${Math.round(sec.score * 10)}/100`, marginX, y);
+        y += 7;
+      }
+    });
+  }
+  if (lastResult.github) {
+    doc.text(`[GitHub] Profile & Activity: ${Math.round((lastResult.github.score || 0) * 10)}/100`, marginX, y);
+    y += 7;
+  }
 
-  doc.save("signal-check-report.pdf");
+  doc.save("signal-check-career-report.pdf");
 }
 
 // ---------- Share result as a downloadable image card ----------
 function shareResultAsImage() {
   if (!lastResult) return;
 
-  const score = Math.round((lastResult.overall_score || 0) * 10);
+  const score = Number(document.getElementById("gaugeScore").textContent) || 0;
   const color = score >= 75 ? "#057642" : score >= 50 ? "#C98A1E" : "#B0290D";
   const W = 800,
     H = 500;
@@ -602,7 +849,7 @@ function shareResultAsImage() {
   ctx.fillText("Signal Check", 76, 100);
   ctx.font = "400 15px Arial";
   ctx.fillStyle = "#56687A";
-  ctx.fillText("LinkedIn Profile Report", 76, 125);
+  ctx.fillText("Career Profile Report", 76, 125);
 
   // Score circle
   ctx.beginPath();
@@ -634,7 +881,8 @@ function shareResultAsImage() {
 
   ctx.font = "400 13px Arial";
   let y = 205;
-  (lastResult.top_3_priority_fixes || []).slice(0, 3).forEach((fix, i) => {
+  const shareFixes = [...document.querySelectorAll("#priorityList li")].slice(0, 3).map((li) => li.textContent);
+  shareFixes.forEach((fix, i) => {
     const lines = wrapCanvasText(ctx, `${i + 1}. ${fix}`, 400);
     lines.forEach((line) => {
       ctx.fillText(line, 300, y);
@@ -689,7 +937,15 @@ function bindEvents() {
     const file = e.target.files?.[0];
     if (file) handlePdfUpload(file);
   });
-  document.getElementById("runScanBtn").addEventListener("click", runAnalysis);
+  document.getElementById("chooseResumeBtn").addEventListener("click", () => {
+    document.getElementById("resumePdfInput").click();
+  });
+  document.getElementById("resumePdfInput").addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleResumePdfUpload(file);
+  });
+  document.getElementById("githubUsernameInput").addEventListener("input", updateRunButtonState);
+  document.getElementById("runScanBtn").addEventListener("click", runFullScan);
   document.getElementById("clearBtn").addEventListener("click", clearForm);
   document.getElementById("exampleBtn").addEventListener("click", loadExample);
   document.getElementById("copyBtn").addEventListener("click", copyResults);
