@@ -49,6 +49,14 @@
       "placeholder": "List project titles + one-line descriptions + links"
     }
   ],
+  "resumeSections": [
+    { "key": "summary", "label": "Professional Summary", "icon": "user", "multiline": true, "placeholder": "Paste your resume summary/objective..." },
+    { "key": "experience", "label": "Experience", "icon": "briefcase", "multiline": true, "placeholder": "Paste your experience bullet points..." },
+    { "key": "projects", "label": "Projects", "icon": "folder", "multiline": true, "placeholder": "List project titles + descriptions" },
+    { "key": "education", "label": "Education", "icon": "cap", "multiline": true, "placeholder": "Degree, institution, year, GPA" },
+    { "key": "skills", "label": "Skills", "icon": "bolt", "multiline": true, "placeholder": "Comma-separated technical skills", "minSkillsWarning": 5, "maxSkillsWarning": 20 }
+  ],
+  "pillarWeights": { "linkedin": 0.4, "resume": 0.4, "github": 0.2 },
   "scoreBands": {
     "good": { "min": 7.5, "color": "#35C48F" },
     "warning": { "min": 5, "color": "#F5A623" },
