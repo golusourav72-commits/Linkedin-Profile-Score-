@@ -63,12 +63,12 @@
     "poor": { "min": 0, "color": "#E5484D" }
   },
   "targetRoles": [
-    { "key": "sde", "label": "Software Development (SDE)" },
+    { "key": "sde", "label": "Software Developer (SDE)" },
     { "key": "full_stack", "label": "Full Stack Developer" },
     { "key": "frontend", "label": "Frontend Developer" },
     { "key": "backend", "label": "Backend Developer" },
     { "key": "ai_ml", "label": "AI / ML Engineer" },
-    { "key": "data_science", "label": "Data Science " },
+    { "key": "data_science", "label": "Data Scientist " },
     { "key": "data_analytics", "label": "Data Analytics" },
     { "key": "devops", "label": "Devops Engineer" },
     { "key": "cybersecurity", "label": "Cybersecurity" },
