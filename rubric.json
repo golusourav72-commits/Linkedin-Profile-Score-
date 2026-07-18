@@ -68,14 +68,14 @@
     { "key": "frontend", "label": "Frontend Developer" },
     { "key": "backend", "label": "Backend Developer" },
     { "key": "ai_ml", "label": "AI / ML Engineer" },
-    { "key": "data_science", "label": "Data Science / ML" },
+    { "key": "data_science", "label": "Data Science " },
     { "key": "data_analytics", "label": "Data Analytics" },
-    { "key": "devops", "label": "DevOps Engineer" },
+    { "key": "devops", "label": "Devops Engineer" },
     { "key": "cybersecurity", "label": "Cybersecurity" },
-    { "key": "product_management", "label": "Product Management" },
+    { "key": "product_management", "label": "Product Manager" },
     { "key": "business_analyst", "label": "Business Analyst" },
     { "key": "digital_marketing", "label": "Digital Marketing" },
-    { "key": "ui_ux_design", "label": "UI/UX Design" },
+    { "key": "ui_ux_design", "label": "UI/UX Designer" },
     { "key": "finance", "label": "Finance" }
   ],
   "targetRoleKeywords": {
@@ -88,10 +88,10 @@
     "data_analytics": ["sql", "excel", "power bi", "tableau", "data cleaning", "statistics", "python", "r", "dashboards", "data visualization", "kpi reporting", "a/b testing"],
     "devops": ["ci/cd", "docker", "kubernetes", "jenkins", "terraform", "ansible", "aws", "azure", "gcp", "linux", "monitoring", "infrastructure as code", "git", "bash scripting"],
     "cybersecurity": ["network security", "penetration testing", "siem", "incident response", "vulnerability assessment", "firewall", "encryption", "owasp", "soc", "threat intelligence", "iso 27001", "nist", "kali linux", "wireshark"],
-    "product_management": ["product strategy", "roadmap", "stakeholder management", "user research", "agile", "scrum", "a/b testing", "kpi", "market research", "product lifecycle", "jira", "wireframing", "go-to-market"],
+    "product_manager": ["product strategy", "roadmap", "stakeholder management", "user research", "agile", "scrum", "a/b testing", "kpi", "market research", "product lifecycle", "jira", "wireframing", "go-to-market"],
     "business_analyst": ["requirements gathering", "stakeholder management", "process improvement", "sql", "business intelligence", "use cases", "gap analysis", "agile", "user stories", "data analysis", "visio", "jira"],
     "digital_marketing": ["seo", "sem", "content marketing", "social media marketing", "google analytics", "email marketing", "ppc", "brand strategy", "conversion rate optimization", "copywriting", "hubspot", "campaign management"],
-    "ui_ux_design": ["figma", "user research", "wireframing", "prototyping", "design systems", "usability testing", "adobe xd", "sketch", "interaction design", "user personas", "accessibility", "information architecture"],
+    "ui_ux_designer": ["figma", "user research", "wireframing", "prototyping", "design systems", "usability testing", "adobe xd", "sketch", "interaction design", "user personas", "accessibility", "information architecture"],
     "finance": ["financial modeling", "valuation", "excel", "financial analysis", "budgeting", "forecasting", "accounting", "equity research", "risk management", "bloomberg terminal", "dcf", "p&l"]
   }
 }
