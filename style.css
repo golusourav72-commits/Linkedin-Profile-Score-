@@ -936,6 +936,7 @@ main.grid { display: contents; }
 
 /* ============ Footer ============ */
 .site-footer {
+  grid-column: 1 / -1;
   text-align: center;
   padding: 44px 20px 24px;
 }
